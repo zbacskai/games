@@ -1,0 +1,98 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+<canvas id="myCanvas1" width="170" height="340", visibility="visible" style="border:1px solid #d3d3d3;">Canvas not supported</canvas>
+<script type="text/javascript">
+
+	const urlParams = new URLSearchParams(window.location.search);
+	const userId = urlParams.get('userId');
+
+	if (!userId)
+	{
+		alert('You must provide an userId variable. Example: htpp://tetris.html?userId=zoltan')
+		throw new Error('Can NOT contunie until valid value provided')
+	}
+
+    const baseUrl = 'http://localhost:8888'
+	const screenUrl = `${baseUrl}/screen?userId=${userId}`
+	const moveUrl = `${baseUrl}/move?userId=${userId}`
+
+	function createBuffer()
+	{
+		var draw_canvas = document.createElement('canvas');
+		draw_canvas.width = 170;
+		draw_canvas.height = 340;
+		return draw_canvas
+	}
+
+	function flipBuffer(dcanvas)
+	{
+		var c = document.getElementById("myCanvas1");
+		var ctxo = c.getContext("2d");
+		ctxo.drawImage(dcanvas, 0, 0);
+	}
+
+	function renderStack(jsono)
+	{
+		var draw_canvas = createBuffer();
+		var ctx = draw_canvas.getContext('2d');
+		var row_i = 0;
+		for(lines of jsono['screen']) {
+			var col_i = 0;
+			for (one_char of lines) {
+				ctx.fillStyle = one_char ? "#0000FF" : "#FFFFFF";
+				ctx.fillRect(col_i * 17, row_i * 17, 15, 15);
+				col_i += 1;
+			}
+			row_i += 1;
+		}
+		flipBuffer(draw_canvas);
+	}
+	
+	function drawStack()
+	{
+		const response = fetch(screenUrl, {
+			method: 'GET',
+			mode: 'cors',
+			cache: 'no-cache',
+		})
+		.then(function(response) {
+			return response.json();
+		})
+		.then(function(jsono) {
+			renderStack(jsono);
+		});
+	};
+
+	function logKey(e) {
+  		console.log(e.code);
+  		request = {
+  			"type" : "keypress",
+  			"code" : e.code
+  		};
+
+  		(async () => {
+  			const rawResponse = await fetch(moveUrl, {
+    			method: 'POST',
+    			body: JSON.stringify(request)
+  			});
+
+  			const content = await rawResponse.json();
+			console.log(content);
+			drawStack();
+		})();
+	};
+ 
+ 	function motion()
+ 	{
+ 		drawStack();
+ 		window.setTimeout(motion, 1000);
+ 	}
+
+ 	drawStack();
+ 	document.addEventListener('keypress', logKey);
+ 	window.setTimeout(motion, 1000);
+ 	
+</script>
+</body>
+</html>
